@@ -74,6 +74,42 @@ pub fn read_mel_file() -> io::Result<()> {
   Ok(())
 }
 
+/*
+class Model{
+  struct  Header{
+    int num_res_blocks;
+    int num_upsample;
+    int total_scale;
+    int nPad;
+  };
+*/
+pub fn read_model_file() -> io::Result<()> {
+  type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
+
+  /*
+  From C++,
+  Header.num_res_blocks ...3
+  Header.num_upsample...3
+  Header.total_scale ...200
+  Header.npad...2
+  */
+  let mut file = File::open("./matrices/model/model.bin")?;
+
+  //let mut reader = Cursor::new(file);
+
+  let num_res_blocks = file.read_i32::<LittleEndian>()?;
+  let num_upsample = file.read_i32::<LittleEndian>()?;
+  let total_scale = file.read_i32::<LittleEndian>()?;
+  let n_pad = file.read_i32::<LittleEndian>()?;
+
+  println!("num_res_blocks: {}", num_res_blocks);
+  println!("num_upsample: {}", num_upsample);
+  println!("total_scale: {}", total_scale);
+  println!("n_pad: {}", n_pad);
+
+  Ok(())
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -81,17 +117,12 @@ mod tests {
   use expectest::prelude::*;
 
   #[test]
-  fn test() {
-    expect!("".chars()).to(be_empty());
+  fn test_1() {
+    expect!(read_mel_file()).to(be_ok());
   }
 
   #[test]
   fn test_2() {
-    expect!("".chars()).to(be_empty());
-  }
-
-  #[test]
-  fn test_3() {
-    expect!(read_mel_file()).to(be_ok());
+    expect!(read_model_file()).to(be_ok());
   }
 }

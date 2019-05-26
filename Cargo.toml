@@ -1,0 +1,24 @@
+[package]
+name = "wavernn"
+version = "0.0.1"
+description = "Rust implementation of the WaveRNN vocoder"
+repository = "https://github.com/echelon/wavernn.rs"
+keywords = [ "TTS", "vocoder", "speech", "synthesis", "ML" ]
+authors = [ "Brandon Thomas <bt@brand.io>",
+            "Brandon Thomas <echelon@gmail.com>" ]
+documentation = "https://docs.rs/wavernn"
+license = "BSD-4-Clause"
+
+[lib]
+name = "wavernn"
+path = "src/lib.rs"
+
+[dependencies]
+nalgebra = "0.18.0"
+
+[dev_dependencies]
+expectest = "0.11"
+
+[badges]
+travis-ci = { repository = "echelon/wavernn.rs" }
+

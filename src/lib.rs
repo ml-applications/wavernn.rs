@@ -15,7 +15,10 @@
 extern crate approx; // For the macro relative_eq!
 
 extern crate nalgebra as na;
+#[macro_use(array)]
+extern crate ndarray;
 extern crate byteorder;
+extern crate itertools;
 
 use std::io;
 use std::fs::File;
@@ -25,6 +28,7 @@ use std::io::Error as IoError;
 use byteorder::ReadBytesExt;
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
+use itertools::enumerate;
 
 use na::{U2, U3, Dynamic, MatrixArray, MatrixVec};
 use na::Vector3;
@@ -32,6 +36,7 @@ use na::zero;
 use na::VecStorage;
 use na::Rotation3;
 use na::Matrix;
+use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 use ::LayerType::Conv1d;
 
 /// Library version string
@@ -243,25 +248,54 @@ impl Conv1dLayer {
       _ => true,
     };
 
+    print!("out_channels: {}", out_channels);
+
+    //let weights : Vec<NDA> = Vec::with_capacity(out_channels as usize);
+
     if kernel_size == 1 {
       // If kernel is 1x then convolution is just matrix multiplication.
       // Load weight into the first element and handle separately.
 
     } else {
+      println!("test");
+      // std::vector<Matrixf> weight;
+      let mut weights : Vec<Array2<f32>> = Vec::with_capacity(out_channels as usize);
+
+      for i in 0 .. out_channels as usize {
+        let mut weight = Array2::<f32>::zeros((in_channels as usize, out_channels as usize));
+
+        for (j, element) in enumerate(&mut weight) {
+          println!("i: {}", j);
+          // TODO: THis is what is rbeaking. I'm reading too much or too little or something.
+          *element = file.read_f32::<LittleEndian>().expect("This should work");
+        }
+
+
+        weights.push(weight);
+      }
+
+      fn f(array: &Array2<f32>) {
+        println!("{:?}", array);
+      }
+
+      for w in weights {
+        f(&w);
+      }
+    }
+
+    if use_bias {
 
     }
 
-    if has_bias {
+    Err(IoError::from_raw_os_error(0)) // TODO: Actual error
 
-    }
-
-    Ok(Conv1dLayer {
+    /*Ok(Conv1dLayer {
       el_size,
       use_bias,
       in_channels,
       out_channels,
       kernel_size,
-    })
+    })*/
   }
 }
 

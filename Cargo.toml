@@ -17,6 +17,8 @@ path = "src/lib.rs"
 approx = "0.3.2" # TODO TEMP
 byteorder = "1.3.1"
 nalgebra = "0.18.0"
+ndarray = "0.12.1"
+itertools = "0.8.0"
 
 [dev_dependencies]
 expectest = "0.11"

@@ -227,7 +227,7 @@ fn read_name(file: &mut File) -> Option<String> {
     int nKernel;
 */
 
-impl Conv1dLayer {
+/*impl Conv1dLayer {
   fn parse(file: &mut File) -> io::Result<Conv1dLayer> {
     let el_size = file.read_i32::<LittleEndian>()?;
     let use_bias = file.read_i32::<LittleEndian>()?;
@@ -293,7 +293,7 @@ impl Conv1dLayer {
       kernel_size,
     })*/
   }
-}
+}*/
 
 #[cfg(test)]
 mod tests {

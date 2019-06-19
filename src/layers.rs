@@ -1,8 +1,9 @@
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
-use std::fs::File;
 use itertools::enumerate;
+use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
+use std::fs::File;
 use std::io::Error as IoError;
 use std::io;
 
@@ -35,11 +36,82 @@ pub struct Conv1dLayer {
     int outChannels;
     int nKernel;
   */
-  el_size: i32,
-  use_bias: bool,
+  //el_size: i32,
+  //use_bias: bool,
+  //in_channels: i32,
+  //out_channels: i32,
+  //kernel_size: i32,
+
+  // TODO std::vector<Matrixf> weight;
+
+  bias: Vec<f32>,
+  has_bias: bool,
   in_channels: i32,
   out_channels: i32,
-  kernel_size: i32,
+  n_kernel: i32,
+}
+
+impl Conv1dLayer {
+
+  pub fn parse(file: &mut File) -> io::Result<Self> {
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let use_bias = file.read_i32::<LittleEndian>()?;
+    let in_channels = file.read_i32::<LittleEndian>()?;
+    let out_channels = file.read_i32::<LittleEndian>()?;
+    let kernel_size = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let has_bias = match use_bias {
+      0 => false,
+      _ => true,
+    };
+
+    if kernel_size == 1 {
+      // TODO
+    } else {
+      // TODO
+      let mut weights : Vec<Array2<f32>> = Vec::with_capacity(out_channels as usize);
+
+      for i in 0 .. out_channels as usize {
+        let mut weight = Array2::<f32>::zeros((in_channels as usize, out_channels as usize));
+
+        for (j, element) in enumerate(&mut weight) {
+          println!("i: {}", j);
+          // TODO: THis is what is rbeaking. I'm reading too much or too little or something.
+          *element = file.read_f32::<LittleEndian>().expect("This should work");
+        }
+
+
+        weights.push(weight);
+      }
+
+      fn f(array: &Array2<f32>) {
+        println!("{:?}", array);
+      }
+
+      for w in weights {
+        f(&w);
+      }
+    }
+
+    let mut bias= Vec::new();
+
+    if has_bias {
+      bias.reserve(kernel_size as usize);
+      read_into_matrix(file, &mut bias);
+    }
+
+    Ok(Self {
+      bias,
+      has_bias,
+      in_channels,
+      out_channels,
+      n_kernel: kernel_size,
+    })
+  }
 }
 
 #[derive(Debug)]
@@ -54,6 +126,27 @@ pub struct Conv2dLayer {
   */
   weight: Vec<f32>,
   n_kernel: i32,
+}
+
+impl Conv2dLayer {
+
+  fn parse(file: &mut File) -> io::Result<Self> {
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let n_kernel = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let mut weight= Vec::with_capacity(n_kernel as usize);
+
+    read_into_matrix(file, &mut weight);
+
+    Ok(Self {
+      weight,
+      n_kernel,
+    })
+  }
 }
 
 #[derive(Debug)]

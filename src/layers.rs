@@ -71,8 +71,46 @@ pub struct BatchNorm1dLayer {
     float eps;
     int nChannels;
   */
+
+  weight: Vec<f32>,
+  bias: Vec<f32>,
+  running_mean: Vec<f32>,
+  running_var: Vec<f32>,
+  eps: f32,
+  n_channels: i32,
 }
 
+impl BatchNorm1dLayer {
+
+  fn parse(file: &mut File) -> io::Result<Self> {
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let in_channels= file.read_i32::<LittleEndian>()?;
+    let eps = file.read_f32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let mut weight= Vec::with_capacity(in_channels as usize);
+    let mut bias= Vec::with_capacity(in_channels as usize);
+    let mut running_mean= Vec::with_capacity(in_channels as usize);
+    let mut running_var= Vec::with_capacity(in_channels as usize);
+
+    read_into_matrix(file, &mut weight);
+    read_into_matrix(file, &mut bias);
+    read_into_matrix(file, &mut running_mean);
+    read_into_matrix(file, &mut running_var);
+
+    Ok(Self {
+      weight,
+      bias,
+      running_mean,
+      running_var,
+      eps,
+      n_channels: in_channels,
+    })
+  }
+}
 
 #[derive(Debug)]
 pub struct LinearLayer {
@@ -87,6 +125,37 @@ pub struct LinearLayer {
     int nRows;
     int nCols;
   */
+
+  // TODO: CompMatrix mat;
+
+  bias: Vec<f32>,
+  n_rows: i32,
+  n_cols: i32,
+}
+
+impl LinearLayer {
+  fn parse(file: &mut File) -> io::Result<Self> {
+    // Read header
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let n_rows = file.read_i32::<LittleEndian>()?;
+    let n_cols = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    // TODO: CompMatrix mat;
+
+    let mut bias = Vec::with_capacity(n_rows as usize);
+
+    read_into_matrix(file, &mut bias);
+
+    Ok(Self {
+      bias,
+      n_rows,
+      n_cols,
+    })
+  }
 }
 
 #[derive(Debug)]

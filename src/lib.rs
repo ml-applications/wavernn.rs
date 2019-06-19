@@ -39,6 +39,11 @@ use na::Matrix;
 use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 use ::LayerType::Conv1d;
 
+mod layers;
+
+use layers::Conv1dLayer;
+use layers::Conv2dLayer;
+
 /// Library version string
 pub const VERSION_STRING : &'static str = "0.0.1";
 
@@ -221,15 +226,6 @@ fn read_name(file: &mut File) -> Option<String> {
     int outChannels;
     int nKernel;
 */
-
-#[derive(Debug)]
-struct Conv1dLayer {
-  el_size: i32,
-  use_bias: bool,
-  in_channels: i32,
-  out_channels: i32,
-  kernel_size: i32,
-}
 
 impl Conv1dLayer {
   fn parse(file: &mut File) -> io::Result<Conv1dLayer> {

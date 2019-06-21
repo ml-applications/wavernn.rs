@@ -26,6 +26,14 @@ pub struct TorchLayer_BaseLayer {
   */
 }
 
+pub enum TorchLayer {
+  Conv1dLayer(Conv1dLayer),
+  Conv2dLayer(Conv2dLayer),
+  BatchNorm1dLayer(BatchNorm1dLayer),
+  LinearLayer(LinearLayer),
+  GruLayer(GruLayer),
+  Stretch2dLayer(Stretch2dLayer),
+}
 
 /*
 class Model{
@@ -44,6 +52,26 @@ class Model{
   TorchLayer fc1;
   TorchLayer fc2;
 */
+
+// net_impl.h
+struct Header {
+  num_res_blocks: i32,
+  num_upsample: i32,
+  total_scale: i32,
+  n_pad: i32,
+}
+
+struct Model {
+  header: Header,
+
+  // TODO: UpsampleNetwork
+  // TODO: Resnet
+  // TODO TorchLayer I
+  // TODO TorchLayer rnn1
+  // TODO TorchLayer fc1
+  // TODO TorchLayer fc2
+}
+
 pub fn read_model_file(filename: &str) -> io::Result<()> {
   type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
 

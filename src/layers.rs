@@ -182,26 +182,6 @@ pub struct Conv2dLayer {
   pub n_kernel: i32,
 }
 
-impl Conv2dLayer {
-  fn parse(file: &mut File) -> io::Result<Self> {
-    let el_size = file.read_i32::<LittleEndian>()?;
-    let n_kernel = file.read_i32::<LittleEndian>()?;
-
-    if el_size != 2 && el_size != 4 {
-      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
-    }
-
-    let mut weight= Vec::with_capacity(n_kernel as usize);
-
-    read_into_matrix(file, &mut weight);
-
-    Ok(Self {
-      weight,
-      n_kernel,
-    })
-  }
-}
-
 #[derive(Clone,Debug)]
 pub struct BatchNorm1dLayer {
   /* class BatchNorm1dLayer : public TorchLayer{
@@ -226,38 +206,6 @@ pub struct BatchNorm1dLayer {
   pub n_channels: i32,
 }
 
-impl BatchNorm1dLayer {
-
-  fn parse(file: &mut File) -> io::Result<Self> {
-    let el_size = file.read_i32::<LittleEndian>()?;
-    let in_channels= file.read_i32::<LittleEndian>()?;
-    let eps = file.read_f32::<LittleEndian>()?;
-
-    if el_size != 2 && el_size != 4 {
-      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
-    }
-
-    let mut weight= Vec::with_capacity(in_channels as usize);
-    let mut bias= Vec::with_capacity(in_channels as usize);
-    let mut running_mean= Vec::with_capacity(in_channels as usize);
-    let mut running_var= Vec::with_capacity(in_channels as usize);
-
-    read_into_matrix(file, &mut weight);
-    read_into_matrix(file, &mut bias);
-    read_into_matrix(file, &mut running_mean);
-    read_into_matrix(file, &mut running_var);
-
-    Ok(Self {
-      weight,
-      bias,
-      running_mean,
-      running_var,
-      eps,
-      n_channels: in_channels,
-    })
-  }
-}
-
 #[derive(Clone,Debug)]
 pub struct LinearLayer {
   /* class LinearLayer : public TorchLayer{
@@ -277,31 +225,6 @@ pub struct LinearLayer {
   pub bias: Vec<f32>,
   pub n_rows: i32,
   pub n_cols: i32,
-}
-
-impl LinearLayer {
-  fn parse(file: &mut File) -> io::Result<Self> {
-    // Read header
-    let el_size = file.read_i32::<LittleEndian>()?;
-    let n_rows = file.read_i32::<LittleEndian>()?;
-    let n_cols = file.read_i32::<LittleEndian>()?;
-
-    if el_size != 2 && el_size != 4 {
-      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
-    }
-
-    // TODO: CompMatrix mat;
-
-    let mut bias = Vec::with_capacity(n_rows as usize);
-
-    read_into_matrix(file, &mut bias);
-
-    Ok(Self {
-      bias,
-      n_rows,
-      n_cols,
-    })
-  }
 }
 
 #[derive(Clone,Debug)]
@@ -335,53 +258,6 @@ pub struct GruLayer {
   pub n_cols: i32,
 }
 
-impl GruLayer {
-
-  fn parse(file: &mut File) -> io::Result<Self> {
-    // Read header
-    let el_size = file.read_i32::<LittleEndian>()?;
-    let n_hidden = file.read_i32::<LittleEndian>()?;
-    let n_input = file.read_i32::<LittleEndian>()?;
-
-    if el_size != 2 && el_size != 4 {
-      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
-    }
-
-    let n_rows = n_hidden;
-    let n_cols = n_input;
-
-    // TODO: CompMatrix W_ir,W_iz,W_in;
-    // TODO: CompMatrix W_hr,W_hz,W_hn;
-
-    let mut b_ir = Vec::with_capacity(n_hidden as usize);
-    let mut b_iz = Vec::with_capacity(n_hidden as usize);
-    let mut b_in = Vec::with_capacity(n_hidden as usize);
-
-    read_into_matrix(file, &mut b_ir);
-    read_into_matrix(file, &mut b_iz);
-    read_into_matrix(file, &mut b_in);
-
-    let mut b_hr = Vec::with_capacity(n_hidden as usize);
-    let mut b_hz = Vec::with_capacity(n_hidden as usize);
-    let mut b_hn = Vec::with_capacity(n_hidden as usize);
-
-    read_into_matrix(file, &mut b_hr);
-    read_into_matrix(file, &mut b_hz);
-    read_into_matrix(file, &mut b_hn);
-
-    Ok(Self {
-      b_ir,
-      b_iz,
-      b_in,
-      b_hr,
-      b_hz,
-      b_hn,
-      n_rows,
-      n_cols,
-    })
-  }
-}
-
 #[derive(Clone,Debug)]
 pub struct Stretch2dLayer {
   /* class Stretch2dLayer : public TorchLayer{
@@ -395,16 +271,6 @@ pub struct Stretch2dLayer {
 
   pub x_scale: i32,
   pub y_scale: i32,
-}
-
-impl Stretch2dLayer {
-
-  fn parse(file: &mut File) -> io::Result<Self> {
-    Ok(Self {
-      x_scale: file.read_i32::<LittleEndian>()?,
-      y_scale: file.read_i32::<LittleEndian>()?,
-    })
-  }
 }
 
 fn read_into_matrix(file: &mut File, mat: &mut Vec<f32>) -> io::Result<()> {

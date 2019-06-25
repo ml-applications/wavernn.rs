@@ -112,7 +112,18 @@ impl ParseStruct<Resnet> for Resnet {
 impl ParseStruct<TorchLayer> for TorchLayer {
   fn parse(file: &mut File) -> io::Result<TorchLayer> {
     let header = TorchLayerHeader::parse(file)?;
-    unimplemented!()
+    println!("TorchLayerHeader: {:?}", header);
+
+    let result = match header.layer_type {
+      LayerType::Conv1d => TorchLayer::Conv1dLayer(Conv1dLayer::parse(file)?),
+      LayerType::Conv2d => TorchLayer::Conv2dLayer(Conv2dLayer::parse(file)?),
+      LayerType::BatchNorm1d => TorchLayer::BatchNorm1dLayer(BatchNorm1dLayer::parse(file)?),
+      LayerType::Linear => TorchLayer::LinearLayer(LinearLayer::parse(file)?),
+      LayerType::GRU => TorchLayer::GruLayer(GruLayer::parse(file)?),
+      LayerType::Stretch2d => TorchLayer::Stretch2dLayer(Stretch2dLayer::parse(file)?),
+    };
+
+    Ok(result)
   }
 }
 
@@ -196,13 +207,144 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
       read_into_matrix(file, &mut bias);
     }
 
-    Ok(Self {
+    Ok(Conv1dLayer {
       weight: Vec::new(), // TODO
       bias,
       has_bias,
       in_channels,
       out_channels,
       n_kernel: kernel_size,
+    })
+  }
+}
+
+impl ParseStruct<Conv2dLayer> for Conv2dLayer {
+  fn parse(file: &mut File) -> io::Result<Conv2dLayer> {
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let n_kernel = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let mut weight= Vec::with_capacity(n_kernel as usize);
+
+    read_into_matrix(file, &mut weight);
+
+    Ok(Conv2dLayer {
+      weight,
+      n_kernel,
+    })
+  }
+}
+
+impl ParseStruct<BatchNorm1dLayer> for BatchNorm1dLayer {
+  fn parse(file: &mut File) -> io::Result<BatchNorm1dLayer> {
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let in_channels= file.read_i32::<LittleEndian>()?;
+    let eps = file.read_f32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let mut weight= Vec::with_capacity(in_channels as usize);
+    let mut bias= Vec::with_capacity(in_channels as usize);
+    let mut running_mean= Vec::with_capacity(in_channels as usize);
+    let mut running_var= Vec::with_capacity(in_channels as usize);
+
+    read_into_matrix(file, &mut weight);
+    read_into_matrix(file, &mut bias);
+    read_into_matrix(file, &mut running_mean);
+    read_into_matrix(file, &mut running_var);
+
+    Ok(BatchNorm1dLayer {
+      weight,
+      bias,
+      running_mean,
+      running_var,
+      eps,
+      n_channels: in_channels,
+    })
+  }
+}
+
+impl ParseStruct<LinearLayer> for LinearLayer {
+  fn parse(file: &mut File) -> io::Result<LinearLayer> {
+    // Read header
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let n_rows = file.read_i32::<LittleEndian>()?;
+    let n_cols = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    // TODO: CompMatrix mat;
+
+    let mut bias = Vec::with_capacity(n_rows as usize);
+
+    read_into_matrix(file, &mut bias);
+
+    Ok(Self {
+      bias,
+      n_rows,
+      n_cols,
+    })
+  }
+}
+
+impl ParseStruct<GruLayer> for GruLayer {
+  fn parse(file: &mut File) -> io::Result<GruLayer> {
+    // Read header
+    let el_size = file.read_i32::<LittleEndian>()?;
+    let n_hidden = file.read_i32::<LittleEndian>()?;
+    let n_input = file.read_i32::<LittleEndian>()?;
+
+    if el_size != 2 && el_size != 4 {
+      return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
+    }
+
+    let n_rows = n_hidden;
+    let n_cols = n_input;
+
+    // TODO: CompMatrix W_ir,W_iz,W_in;
+    // TODO: CompMatrix W_hr,W_hz,W_hn;
+
+    let mut b_ir = Vec::with_capacity(n_hidden as usize);
+    let mut b_iz = Vec::with_capacity(n_hidden as usize);
+    let mut b_in = Vec::with_capacity(n_hidden as usize);
+
+    read_into_matrix(file, &mut b_ir);
+    read_into_matrix(file, &mut b_iz);
+    read_into_matrix(file, &mut b_in);
+
+    let mut b_hr = Vec::with_capacity(n_hidden as usize);
+    let mut b_hz = Vec::with_capacity(n_hidden as usize);
+    let mut b_hn = Vec::with_capacity(n_hidden as usize);
+
+    read_into_matrix(file, &mut b_hr);
+    read_into_matrix(file, &mut b_hz);
+    read_into_matrix(file, &mut b_hn);
+
+    Ok(GruLayer {
+      b_ir,
+      b_iz,
+      b_in,
+      b_hr,
+      b_hz,
+      b_hn,
+      n_rows,
+      n_cols,
+    })
+  }
+}
+
+impl ParseStruct<Stretch2dLayer> for Stretch2dLayer {
+  fn parse(file: &mut File) -> io::Result<Stretch2dLayer> {
+    Ok(Stretch2dLayer {
+      x_scale: file.read_i32::<LittleEndian>()?,
+      y_scale: file.read_i32::<LittleEndian>()?,
     })
   }
 }

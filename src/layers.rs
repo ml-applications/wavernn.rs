@@ -14,17 +14,15 @@ use std::io::Error as IoError;
 use std::io::{Cursor, Read};
 use std::io;
 
-pub struct TorchLayer_BaseLayer {
-  /* class TorchLayer : public BaseLayer {
-    struct  Header{
-        //int size; //size of data blob, not including this header
-        enum class LayerType : int { Conv1d=1, Conv2d=2, BatchNorm1d=3, Linear=4, GRU=5, Stretch2d=6 } layerType;
-        char name[64]; //layer name for debugging
-    };
+/* class TorchLayer : public BaseLayer {
+  struct  Header{
+      //int size; //size of data blob, not including this header
+      enum class LayerType : int { Conv1d=1, Conv2d=2, BatchNorm1d=3, Linear=4, GRU=5, Stretch2d=6 } layerType;
+      char name[64]; //layer name for debugging
+  };
 
-    BaseLayer* impl;
-  */
-}
+  BaseLayer* impl;
+*/
 
 pub enum TorchLayer {
   Conv1dLayer(Conv1dLayer),
@@ -35,41 +33,64 @@ pub enum TorchLayer {
   Stretch2dLayer(Stretch2dLayer),
 }
 
-/*
-class Model{
-  struct  Header{
-    int num_res_blocks;
-    int num_upsample;
-    int total_scale;
-    int nPad;
-  };
-  Header header;
-
-  UpsampleNetwork upsample;
-  Resnet resnet;
-  TorchLayer I;
-  TorchLayer rnn1;
-  TorchLayer fc1;
-  TorchLayer fc2;
-*/
-
 // net_impl.h
-struct Header {
+struct ModelHeader {
   num_res_blocks: i32,
   num_upsample: i32,
   total_scale: i32,
   n_pad: i32,
 }
 
-struct Model {
-  header: Header,
+struct UpsampleNetwork {
+  up_layers: Vec<TorchLayer>,
+}
 
-  // TODO: UpsampleNetwork
-  // TODO: Resnet
-  // TODO TorchLayer I
-  // TODO TorchLayer rnn1
-  // TODO TorchLayer fc1
-  // TODO TorchLayer fc2
+struct ResBlock {
+  resblock: Vec<TorchLayer>,
+}
+
+struct Resnet {
+  conv_in: TorchLayer,
+  batch_norm: TorchLayer,
+  resblock: ResBlock,
+  conv_out: TorchLayer,
+  stretch2d: TorchLayer,
+}
+
+struct Model {
+  /*class Model{
+    struct  Header{
+      int num_res_blocks;
+      int num_upsample;
+      int total_scale;
+      int nPad;
+    };
+    Header header;
+
+    UpsampleNetwork upsample;
+    Resnet resnet;
+    TorchLayer I;
+    TorchLayer rnn1;
+    TorchLayer fc1;
+    TorchLayer fc2;
+  */
+  header: ModelHeader,
+  upsample: UpsampleNetwork,
+  resnet: Resnet,
+  i: TorchLayer,
+  rnn1: TorchLayer,
+  fc1: TorchLayer,
+  fc2: TorchLayer,
+}
+
+// wavernn.h
+struct CompMatrix {
+  weight: Vec<f32>, // TODO: Is this right? Jeez, C++
+  row_idx: Vec<i32>, // TODO: Is this right? Jeez, C++
+  col_idx: Vec<i8>, // TODO: Is this right? Jeez, C++
+  n_groups: i32,
+  n_rows: i32,
+  n_cols: i32,
 }
 
 pub fn read_model_file(filename: &str) -> io::Result<()> {
@@ -180,7 +201,6 @@ fn read_name(file: &mut File) -> Option<String> {
   Some(name.into())
 }
 
-
 #[derive(Debug)]
 pub struct Conv1dLayer {
   /* class Conv1dLayer : public TorchLayer{
@@ -198,14 +218,7 @@ pub struct Conv1dLayer {
     int outChannels;
     int nKernel;
   */
-  //el_size: i32,
-  //use_bias: bool,
-  //in_channels: i32,
-  //out_channels: i32,
-  //kernel_size: i32,
-
-  // TODO std::vector<Matrixf> weight;
-
+  weight: Vec<Vec<f32>>, // TODO: Use actual matrices.
   bias: Vec<f32>,
   has_bias: bool,
   in_channels: i32,
@@ -267,6 +280,7 @@ impl Conv1dLayer {
     }
 
     Ok(Self {
+      weight: Vec::new(), // TODO
       bias,
       has_bias,
       in_channels,

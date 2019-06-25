@@ -57,13 +57,13 @@ pub fn test() {
   relative_eq!(b.angle(), angle);
 }
 
-pub fn read_mel_file() -> io::Result<()> {
+pub fn read_mel_file(filename: &str) -> io::Result<()> {
   // https://en.cppreference.com/w/cpp/language/types
   // Dynamically sized and dynamically allocated matrix with
   // two rows and using 32-bit signed integers.
   type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
 
-  let mut file = File::open("./matrices/mels/output.cpp-4.mel")?;
+  let mut file = File::open(filename)?;
 
   //let mut reader = Cursor::new(file);
 
@@ -176,12 +176,13 @@ mod tests {
   use expectest::prelude::*;
 
   #[test]
-  fn test_1() {
-    expect!(read_mel_file()).to(be_ok());
+  fn test_read_mel_file() {
+    let filename = "./matrices/mels/output.cpp-4.mel";
+    expect!(read_mel_file(filename)).to(be_ok());
   }
 
   #[test]
-  fn test_2() {
+  fn test_read_model() {
     let filename = "./matrices/model/model.bin";
     expect!(read_model_file(filename)).to(be_ok());
   }

@@ -26,6 +26,7 @@ use parser::ParseStruct;
   BaseLayer* impl;
 */
 
+#[derive(Clone,Debug)]
 pub enum TorchLayer {
   Conv1dLayer(Conv1dLayer),
   Conv2dLayer(Conv2dLayer),
@@ -36,30 +37,35 @@ pub enum TorchLayer {
 }
 
 // net_impl.h
-struct ModelHeader {
-  num_res_blocks: i32,
-  num_upsample: i32,
-  total_scale: i32,
-  n_pad: i32,
+#[derive(Clone,Debug)]
+pub struct ModelHeader {
+  pub num_res_blocks: i32,
+  pub num_upsample: i32,
+  pub total_scale: i32,
+  pub n_pad: i32,
 }
 
-struct UpsampleNetwork {
-  up_layers: Vec<TorchLayer>,
+#[derive(Clone,Debug)]
+pub struct UpsampleNetwork {
+  pub up_layers: Vec<TorchLayer>,
 }
 
-struct ResBlock {
-  resblock: Vec<TorchLayer>,
+#[derive(Clone,Debug)]
+pub struct ResBlock {
+  pub resblock: Vec<TorchLayer>,
 }
 
-struct Resnet {
-  conv_in: TorchLayer,
-  batch_norm: TorchLayer,
-  resblock: ResBlock,
-  conv_out: TorchLayer,
-  stretch2d: TorchLayer,
+#[derive(Clone,Debug)]
+pub struct Resnet {
+  pub conv_in: TorchLayer,
+  pub batch_norm: TorchLayer,
+  pub resblock: ResBlock,
+  pub conv_out: TorchLayer,
+  pub stretch2d: TorchLayer,
 }
 
-struct Model {
+#[derive(Clone,Debug)]
+pub struct Model {
   /*class Model{
     struct  Header{
       int num_res_blocks;
@@ -76,26 +82,27 @@ struct Model {
     TorchLayer fc1;
     TorchLayer fc2;
   */
-  header: ModelHeader,
-  upsample: UpsampleNetwork,
-  resnet: Resnet,
-  i: TorchLayer,
-  rnn1: TorchLayer,
-  fc1: TorchLayer,
-  fc2: TorchLayer,
+  pub header: ModelHeader,
+  pub upsample: UpsampleNetwork,
+  pub resnet: Resnet,
+  pub i: TorchLayer,
+  pub rnn1: TorchLayer,
+  pub fc1: TorchLayer,
+  pub fc2: TorchLayer,
 }
 
 // wavernn.h
-struct CompMatrix {
-  weight: Vec<f32>, // TODO: Is this right? Jeez, C++
-  row_idx: Vec<i32>, // TODO: Is this right? Jeez, C++
-  col_idx: Vec<i8>, // TODO: Is this right? Jeez, C++
-  n_groups: i32,
-  n_rows: i32,
-  n_cols: i32,
+#[derive(Clone,Debug)]
+pub struct CompMatrix {
+  pub weight: Vec<f32>, // TODO: Is this right? Jeez, C++
+  pub row_idx: Vec<i32>, // TODO: Is this right? Jeez, C++
+  pub col_idx: Vec<i8>, // TODO: Is this right? Jeez, C++
+  pub n_groups: i32,
+  pub n_rows: i32,
+  pub n_cols: i32,
 }
 
-#[derive(Clone,Copy,Debug)]
+#[derive(Copy,Clone,Debug)]
 pub enum LayerType {
   Conv1d,
   Conv2d,
@@ -130,7 +137,7 @@ fn read_name(file: &mut File) -> Option<String> {
   Some(name.into())
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct Conv1dLayer {
   /* class Conv1dLayer : public TorchLayer{
     struct  Header{
@@ -155,7 +162,7 @@ pub struct Conv1dLayer {
   pub n_kernel: i32,
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct Conv2dLayer {
   /* class Conv2dLayer : public TorchLayer{
     struct  Header{
@@ -165,12 +172,11 @@ pub struct Conv2dLayer {
     Vectorf weight;
     int nKernel;
   */
-  weight: Vec<f32>,
-  n_kernel: i32,
+  pub weight: Vec<f32>,
+  pub n_kernel: i32,
 }
 
 impl Conv2dLayer {
-
   fn parse(file: &mut File) -> io::Result<Self> {
     let el_size = file.read_i32::<LittleEndian>()?;
     let n_kernel = file.read_i32::<LittleEndian>()?;
@@ -190,7 +196,7 @@ impl Conv2dLayer {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct BatchNorm1dLayer {
   /* class BatchNorm1dLayer : public TorchLayer{
     struct  Header{
@@ -206,12 +212,12 @@ pub struct BatchNorm1dLayer {
     int nChannels;
   */
 
-  weight: Vec<f32>,
-  bias: Vec<f32>,
-  running_mean: Vec<f32>,
-  running_var: Vec<f32>,
-  eps: f32,
-  n_channels: i32,
+  pub weight: Vec<f32>,
+  pub bias: Vec<f32>,
+  pub running_mean: Vec<f32>,
+  pub running_var: Vec<f32>,
+  pub eps: f32,
+  pub n_channels: i32,
 }
 
 impl BatchNorm1dLayer {
@@ -246,7 +252,7 @@ impl BatchNorm1dLayer {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct LinearLayer {
   /* class LinearLayer : public TorchLayer{
     struct  Header{
@@ -262,9 +268,9 @@ pub struct LinearLayer {
 
   // TODO: CompMatrix mat;
 
-  bias: Vec<f32>,
-  n_rows: i32,
-  n_cols: i32,
+  pub bias: Vec<f32>,
+  pub n_rows: i32,
+  pub n_cols: i32,
 }
 
 impl LinearLayer {
@@ -292,7 +298,7 @@ impl LinearLayer {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct GruLayer {
   /* class GRULayer : public TorchLayer{
     struct  Header{
@@ -311,16 +317,16 @@ pub struct GruLayer {
   // TODO: CompMatrix W_ir,W_iz,W_in;
   // TODO: CompMatrix W_hr,W_hz,W_hn;
 
-  b_ir: Vec<f32>,
-  b_iz: Vec<f32>,
-  b_in: Vec<f32>,
+  pub b_ir: Vec<f32>,
+  pub b_iz: Vec<f32>,
+  pub b_in: Vec<f32>,
 
-  b_hr: Vec<f32>,
-  b_hz: Vec<f32>,
-  b_hn: Vec<f32>,
+  pub b_hr: Vec<f32>,
+  pub b_hz: Vec<f32>,
+  pub b_hn: Vec<f32>,
 
-  n_rows: i32,
-  n_cols: i32,
+  pub n_rows: i32,
+  pub n_cols: i32,
 }
 
 impl GruLayer {
@@ -370,7 +376,7 @@ impl GruLayer {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct Stretch2dLayer {
   /* class Stretch2dLayer : public TorchLayer{
     struct  Header{
@@ -381,8 +387,8 @@ pub struct Stretch2dLayer {
     int y_scale;
   */
 
-  x_scale: i32,
-  y_scale: i32,
+  pub x_scale: i32,
+  pub y_scale: i32,
 }
 
 impl Stretch2dLayer {

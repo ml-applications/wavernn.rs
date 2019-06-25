@@ -16,29 +16,22 @@ use std::io;
 
 use layers::*;
 
+/**
+ * Read an ML model file.
+ * See net_impl.cpp : Model::loadNext(FILE *fd)
+ */
 pub fn read_model_file(filename: &str) -> io::Result<()> {
   type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
 
-  /*
-  From C++,
-  Header.num_res_blocks ...3
-  Header.num_upsample...3
-  Header.total_scale ...200
-  Header.npad...2
-  */
   let mut file = File::open(filename)?;
 
-  //let mut reader = Cursor::new(file);
+  let header = ModelHeader::parse(&mut file)?;
 
-  let num_res_blocks = file.read_i32::<LittleEndian>()?;
-  let num_upsample = file.read_i32::<LittleEndian>()?;
-  let total_scale = file.read_i32::<LittleEndian>()?;
-  let n_pad = file.read_i32::<LittleEndian>()?;
+  println!("model_header: {:?}", header);
 
-  println!("num_res_blocks: {}", num_res_blocks);
-  println!("num_upsample: {}", num_upsample);
-  println!("total_scale: {}", total_scale);
-  println!("n_pad: {}", n_pad);
+  let resnet = Resnet::parse(&mut file)?;
+
+  println!("resnet : {:?}", header);
 
   /*
   class Resnet {
@@ -93,8 +86,24 @@ pub trait ParseStruct<T> {
   fn parse(file: &mut File) -> io::Result<T>;
 }
 
-impl ParseStruct<Conv1dLayer> for Conv1dLayer {
+impl ParseStruct<ModelHeader> for ModelHeader {
+  fn parse(file: &mut File) -> io::Result<ModelHeader> {
+    Ok( ModelHeader {
+      num_res_blocks: file.read_i32::<LittleEndian>()?,
+      num_upsample: file.read_i32::<LittleEndian>()?,
+      total_scale: file.read_i32::<LittleEndian>()?,
+      n_pad: file.read_i32::<LittleEndian>()?,
+    })
+  }
+}
 
+impl ParseStruct<Resnet> for Resnet {
+  fn parse(file: &mut File) -> io::Result<Resnet> {
+    unimplemented!()
+  }
+}
+
+impl ParseStruct<Conv1dLayer> for Conv1dLayer {
   fn parse(file: &mut File) -> io::Result<Conv1dLayer> {
     let el_size = file.read_i32::<LittleEndian>()?;
     let use_bias = file.read_i32::<LittleEndian>()?;

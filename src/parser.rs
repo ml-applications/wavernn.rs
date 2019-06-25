@@ -99,6 +99,47 @@ impl ParseStruct<ModelHeader> for ModelHeader {
 
 impl ParseStruct<Resnet> for Resnet {
   fn parse(file: &mut File) -> io::Result<Resnet> {
+    Ok( Resnet {
+      conv_in: TorchLayer::parse(file)?,
+      batch_norm: TorchLayer::parse(file)?,
+      resblock: ResBlock::parse(file)?,
+      conv_out: TorchLayer::parse(file)?,
+      stretch2d: TorchLayer::parse(file)?,
+    })
+  }
+}
+
+impl ParseStruct<TorchLayer> for TorchLayer {
+  fn parse(file: &mut File) -> io::Result<TorchLayer> {
+    let header = TorchLayerHeader::parse(file)?;
+    unimplemented!()
+  }
+}
+
+impl ParseStruct<TorchLayerHeader> for TorchLayerHeader {
+  fn parse(file: &mut File) -> io::Result<TorchLayerHeader> {
+    let layer_type = file.read_i32::<LittleEndian>()?;
+
+    let layer_type = match layer_type {
+      1 => LayerType::Conv1d,
+      2 => LayerType::Conv2d,
+      3 => LayerType::BatchNorm1d,
+      4 => LayerType::Linear,
+      5 => LayerType::GRU,
+      6 => LayerType::Stretch2d,
+      _ => return Err(IoError::from_raw_os_error(0)), // TODO: Actual error
+    };
+
+    Ok (TorchLayerHeader {
+      layer_type,
+      name: read_name(file)?,
+    })
+  }
+}
+
+
+impl ParseStruct<ResBlock> for ResBlock {
+  fn parse(file: &mut File) -> io::Result<ResBlock> {
     unimplemented!()
   }
 }
@@ -173,7 +214,7 @@ fn read_into_matrix(file: &mut File, mat: &mut Vec<f32>) -> io::Result<()> {
   Ok(())
 }
 
-fn read_name(file: &mut File) -> Option<String> {
+fn read_name(file: &mut File) -> io::Result<String> {
   let mut buffer = [0; 64];
   //let mut buffer = String::with_capacity(64usize);
   file.read_exact(&mut buffer);
@@ -182,7 +223,7 @@ fn read_name(file: &mut File) -> Option<String> {
 
   // TODO: Remove trailing null bytes.
 
-  Some(name.into())
+  Ok(name.into())
 }
 
 // TODO: Use From<> trait.

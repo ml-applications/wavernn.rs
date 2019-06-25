@@ -36,6 +36,12 @@ pub enum TorchLayer {
   Stretch2dLayer(Stretch2dLayer),
 }
 
+#[derive(Clone,Debug)]
+pub struct TorchLayerHeader {
+  pub layer_type: LayerType,
+  pub name: String,
+}
+
 // net_impl.h
 #[derive(Clone,Debug)]
 pub struct ModelHeader {

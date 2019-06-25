@@ -40,10 +40,11 @@ use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 //use ::LayerType::Conv1d;
 
 mod layers;
+mod parser;
 
 use layers::Conv1dLayer;
 use layers::Conv2dLayer;
-use layers::read_model_file;
+use parser::read_model_file;
 
 /// Library version string
 pub const VERSION_STRING : &'static str = "0.0.1";

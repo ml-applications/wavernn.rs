@@ -70,7 +70,7 @@ pub fn read_model_file(filename: &str) -> io::Result<()> {
 
   println!("name: {}", name);
 
-  match (layer_type) {
+  match layer_type {
     LayerType::Conv1d => {
       let layer = Conv1dLayer::parse(&mut file)?;
       println!("Layer: {:?}", layer);
@@ -184,33 +184,28 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
       // If kernel is 1x then convolution is just matrix multiplication.
       // Load weight into the first element and handle separately.
       let shape = [in_channels as usize, out_channels as usize];
-      let matrix = ArrayD::<f32>::zeros(IxDyn(&shape));
-      weight.push(matrix);
+      let mut matrix = ArrayD::<f32>::zeros(IxDyn(&shape));
 
-      // TODO
+      for _i in 0 .. in_channels {
+        for _j in 0 .. out_channels {
+          let _element = file.read_f32::<LittleEndian>()?;
+          // TODO: SET
+        }
+      }
+      weight.push(matrix);
     } else {
-      // TODO
-      /*let mut weights : Vec<Array2<f32>> = Vec::with_capacity(out_channels as usize);
+      let shape = [in_channels as usize, kernel_size as usize];
 
       for i in 0 .. out_channels as usize {
-        let mut weight = Array2::<f32>::zeros((in_channels as usize, out_channels as usize));
-
-        for (j, element) in enumerate(&mut weight) {
-          //println!("i: {}", j);
-          // TODO: THis is what is breaking. I'm reading too much or too little or something.
-          *element = file.read_f32::<LittleEndian>().expect("This should work");
+        let matrix = ArrayD::<f32>::zeros(IxDyn(&shape));
+        for _j in 0 .. in_channels {
+          for _k in 0 .. kernel_size {
+            let _element = file.read_f32::<LittleEndian>()?;
+            // TODO: SET
+          }
         }
-
-        weights.push(weight);
+        weight.push(matrix);
       }
-
-      fn f(array: &Array2<f32>) {
-        println!("{:?}", array);
-      }
-
-      for w in weights {
-        f(&w);
-      }*/
     }
 
     let mut bias= Vec::new();

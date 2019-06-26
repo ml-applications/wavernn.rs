@@ -14,11 +14,11 @@
 #[macro_use]
 extern crate approx; // For the macro relative_eq!
 
-extern crate nalgebra as na;
 #[macro_use(array)]
 extern crate ndarray;
 extern crate byteorder;
 extern crate itertools;
+extern crate nalgebra as na_do_not_use;
 
 use std::io;
 use std::fs::File;
@@ -30,12 +30,6 @@ use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use itertools::enumerate;
 
-use na::{U2, U3, Dynamic, MatrixArray, MatrixVec};
-use na::Vector3;
-use na::zero;
-use na::VecStorage;
-use na::Rotation3;
-use na::Matrix;
 use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 //use ::LayerType::Conv1d;
 
@@ -49,24 +43,20 @@ use parser::read_model_file;
 /// Library version string
 pub const VERSION_STRING : &'static str = "0.0.1";
 
-pub fn test() {
-  let axis  = Vector3::x_axis();
-  let angle = 1.57;
-  let b     = Rotation3::from_axis_angle(&axis, angle);
-
-  relative_eq!(b.axis().unwrap(), axis);
-  relative_eq!(b.angle(), angle);
-}
-
 pub fn read_mel_file(filename: &str) -> io::Result<()> {
+  use na_do_not_use::{U2, U3, Dynamic, MatrixArray, MatrixVec};
+  use na_do_not_use::Vector3;
+  use na_do_not_use::zero;
+  use na_do_not_use::VecStorage;
+  use na_do_not_use::Rotation3;
+  use na_do_not_use::Matrix;
+
   // https://en.cppreference.com/w/cpp/language/types
   // Dynamically sized and dynamically allocated matrix with
   // two rows and using 32-bit signed integers.
   type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
 
   let mut file = File::open(filename)?;
-
-  //let mut reader = Cursor::new(file);
 
   let rows = file.read_i32::<LittleEndian>()?;
   let cols = file.read_i32::<LittleEndian>()?;

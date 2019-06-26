@@ -2,12 +2,6 @@ use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use itertools::enumerate;
-use na::Matrix;
-use na::Rotation3;
-use na::VecStorage;
-use na::Vector3;
-use na::zero;
-use na::{U2, U3, Dynamic, MatrixArray, MatrixVec};
 use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 use std::fs::File;
 use std::io::Error as IoError;
@@ -25,6 +19,8 @@ use parser::ParseStruct;
 
   BaseLayer* impl;
 */
+
+//pub type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
 
 #[derive(Clone,Debug)]
 pub enum TorchLayer {

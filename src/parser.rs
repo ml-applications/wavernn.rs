@@ -2,12 +2,6 @@ use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use itertools::enumerate;
-use na::Matrix;
-use na::Rotation3;
-use na::VecStorage;
-use na::Vector3;
-use na::zero;
-use na::{U2, U3, Dynamic, MatrixArray, MatrixVec};
 use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
 use std::fs::File;
 use std::io::Error as IoError;
@@ -21,8 +15,6 @@ use layers::*;
  * See net_impl.cpp : Model::loadNext(FILE *fd)
  */
 pub fn read_model_file(filename: &str) -> io::Result<()> {
-  type DMatrixf32 = Matrix<f32, Dynamic, Dynamic, VecStorage<f32, Dynamic, Dynamic>>;
-
   let mut file = File::open(filename)?;
 
   let header = ModelHeader::parse(&mut file)?;
@@ -151,12 +143,15 @@ impl ParseStruct<TorchLayerHeader> for TorchLayerHeader {
 
 impl ParseStruct<ResBlock> for ResBlock {
   fn parse(file: &mut File) -> io::Result<ResBlock> {
+    println!("ResBlock.parse()");
     unimplemented!()
   }
 }
 
 impl ParseStruct<Conv1dLayer> for Conv1dLayer {
   fn parse(file: &mut File) -> io::Result<Conv1dLayer> {
+    println!("Conv1dLayer.parse()");
+
     let el_size = file.read_i32::<LittleEndian>()?;
     let use_bias = file.read_i32::<LittleEndian>()?;
     let in_channels = file.read_i32::<LittleEndian>()?;
@@ -172,7 +167,12 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
       _ => true,
     };
 
+    let mut weight = Vec::new();
+
     if kernel_size == 1 {
+      // If kernel is 1x then convolution is just matrix multiplication.
+      // Load weight into the first element and handle separately.
+      //weight.push(matrix);
       // TODO
     } else {
       // TODO
@@ -208,7 +208,7 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
     }
 
     Ok(Conv1dLayer {
-      weight: Vec::new(), // TODO
+      weight,
       bias,
       has_bias,
       in_channels,
@@ -220,6 +220,8 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
 
 impl ParseStruct<Conv2dLayer> for Conv2dLayer {
   fn parse(file: &mut File) -> io::Result<Conv2dLayer> {
+    println!("Conv2dLayer.parse()");
+
     let el_size = file.read_i32::<LittleEndian>()?;
     let n_kernel = file.read_i32::<LittleEndian>()?;
 

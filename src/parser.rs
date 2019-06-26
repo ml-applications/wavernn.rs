@@ -2,7 +2,7 @@ use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use itertools::enumerate;
-use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
+use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1, ArrayD, IxDyn};
 use std::fs::File;
 use std::io::Error as IoError;
 use std::io::{Cursor, Read};
@@ -172,11 +172,14 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
     if kernel_size == 1 {
       // If kernel is 1x then convolution is just matrix multiplication.
       // Load weight into the first element and handle separately.
-      //weight.push(matrix);
+      let shape = [in_channels as usize, out_channels as usize];
+      let matrix = ArrayD::<f32>::zeros(IxDyn(&shape));
+      weight.push(matrix);
+
       // TODO
     } else {
       // TODO
-      let mut weights : Vec<Array2<f32>> = Vec::with_capacity(out_channels as usize);
+      /*let mut weights : Vec<Array2<f32>> = Vec::with_capacity(out_channels as usize);
 
       for i in 0 .. out_channels as usize {
         let mut weight = Array2::<f32>::zeros((in_channels as usize, out_channels as usize));
@@ -187,7 +190,6 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
           *element = file.read_f32::<LittleEndian>().expect("This should work");
         }
 
-
         weights.push(weight);
       }
 
@@ -197,7 +199,7 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
 
       for w in weights {
         f(&w);
-      }
+      }*/
     }
 
     let mut bias= Vec::new();

@@ -2,7 +2,7 @@ use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use itertools::enumerate;
-use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
+use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1, ArrayD};
 use std::fs::File;
 use std::io::Error as IoError;
 use std::io::{Cursor, Read};
@@ -156,7 +156,7 @@ pub struct Conv1dLayer {
     int outChannels;
     int nKernel;
   */
-  pub weight: Vec<Vec<f32>>, // TODO: Use actual matrices.
+  pub weight: Vec<ArrayD<f32>>,
   pub bias: Vec<f32>,
   pub has_bias: bool,
   pub in_channels: i32,

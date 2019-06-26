@@ -176,6 +176,12 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
     let out_channels = file.read_i32::<LittleEndian>()?;
     let kernel_size = file.read_i32::<LittleEndian>()?;
 
+    println!("-> el_size {}", el_size);
+    println!("-> use_bias {}", use_bias);
+    println!("-> in_channels {}", in_channels);
+    println!("-> out_channels {}", out_channels);
+    println!("-> kernel_size {}", kernel_size);
+
     if el_size != 2 && el_size != 4 {
       return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
     }
@@ -215,8 +221,10 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
       }
     }
 
+    println!("-> has bias? {}", has_bias);
+
     let bias = if has_bias {
-      read_vec_f32(file, kernel_size as usize)?
+      read_vec_f32(file, out_channels as usize)?
     } else {
       Vec::new()
     };

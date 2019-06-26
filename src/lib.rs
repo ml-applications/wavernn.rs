@@ -9,36 +9,45 @@
 //
 //! Vocode.rs
 
-#[cfg(test)] #[macro_use] extern crate expectest;
-
 #[macro_use]
-extern crate approx; // For the macro relative_eq!
-
-#[macro_use(array)]
-extern crate ndarray;
+extern crate approx;
 extern crate byteorder;
+#[cfg(test)] #[macro_use] extern crate expectest;
 extern crate itertools;
 extern crate nalgebra as na_do_not_use;
+#[macro_use(array)]
+extern crate ndarray;
 
-use std::io;
+// For the macro relative_eq!
+
 use std::fs::File;
+use std::io;
 use std::io::{Cursor, Read};
 use std::io::Error as IoError;
 
-use byteorder::ReadBytesExt;
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
+use byteorder::ReadBytesExt;
 use itertools::enumerate;
-
-use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1};
-//use ::LayerType::Conv1d;
-
-mod layers;
-mod parser;
+use ndarray::Array;
+use ndarray::Array1;
+use ndarray::Array2;
+use ndarray::ArrayBase;
+use ndarray::ArrayD;
+use ndarray::Dim;
+use ndarray::Ix0;
+use ndarray::Ix1;
+use ndarray::Ix2;
+use ndarray::IxDyn;
 
 use layers::Conv1dLayer;
 use layers::Conv2dLayer;
 use parser::read_model_file;
+
+//use ::LayerType::Conv1d;
+
+mod layers;
+mod parser;
 
 /// Library version string
 pub const VERSION_STRING : &'static str = "0.0.1";
@@ -163,8 +172,9 @@ pub fn read_mel_file(filename: &str) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
   use expectest::prelude::*;
+
+  use super::*;
 
   #[test]
   fn test_read_mel_file() {

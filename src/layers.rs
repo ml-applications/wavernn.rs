@@ -1,12 +1,23 @@
+use std::fs::File;
+use std::io;
+use std::io::Cursor;
+use std::io::Error as IoError;
+use std::io::Read;
+
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use itertools::enumerate;
-use ndarray::{ArrayBase, Array, Dim, Ix2, Ix1, Ix0, Array2, Array1, ArrayD};
-use std::fs::File;
-use std::io::Error as IoError;
-use std::io::{Cursor, Read};
-use std::io;
+use ndarray::Array;
+use ndarray::Array1;
+use ndarray::Array2;
+use ndarray::ArrayBase;
+use ndarray::ArrayD;
+use ndarray::Dim;
+use ndarray::Ix0;
+use ndarray::Ix1;
+use ndarray::Ix2;
+use ndarray::IxDyn;
 
 use parser::ParseStruct;
 

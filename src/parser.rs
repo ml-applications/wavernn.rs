@@ -25,7 +25,7 @@ use layers::*;
  * Read an ML model file.
  * See net_impl.cpp : Model::loadNext(FILE *fd)
  */
-pub fn read_model_file(filename: &str) -> io::Result<()> {
+pub fn read_model_file(filename: &str) -> io::Result<Model> {
   let mut file = File::open(filename)?;
 
   let header = ModelHeader::parse(&mut file)?;
@@ -36,53 +36,24 @@ pub fn read_model_file(filename: &str) -> io::Result<()> {
 
   println!("resnet : {:?}", header);
 
-  /*
-  class Resnet {
-    TorchLayer conv_in;
-    TorchLayer batch_norm;
-    ResBlock resblock;
-    TorchLayer conv_out;
-    TorchLayer stretch2d;  //moved stretch2d layer into resnet from upsample as in python code
-  }
-  */
+  let upsample = UpsampleNetwork::parse(&mut file)?;
 
-  //TorchLayer::Header header;
-  //fread(&header, sizeof(TorchLayer::Header), 1, fd);
-  /*
+  println!("upsample : {:?}", upsample);
 
-    struct  Header{
-        //int size; //size of data blob, not including this header
-        enum class LayerType : int { Conv1d=1, Conv2d=2, BatchNorm1d=3, Linear=4, GRU=5, Stretch2d=6 } layerType;
-        char name[64]; //layer name for debugging
-    };*/
+  let i = TorchLayer::parse(&mut file)?;
+  let rnn1 = TorchLayer::parse(&mut file)?;
+  let fc1= TorchLayer::parse(&mut file)?;
+  let fc2= TorchLayer::parse(&mut file)?;
 
-  let layer_type = file.read_i32::<LittleEndian>()?;
-
-  let layer_type = parse_layer_type(layer_type).unwrap();
-
-  println!("layer_type: {:?}", layer_type);
-
-  /*let mut buffer = [0; 64];
-  file.read_exact(&mut buffer);
-  let name = String::from_utf8_lossy(&buffer);*/
-
-  let name = read_name(&mut file).unwrap();
-
-  println!("name: {}", name);
-
-  match layer_type {
-    LayerType::Conv1d => {
-      let layer = Conv1dLayer::parse(&mut file)?;
-      println!("Layer: {:?}", layer);
-    },
-    LayerType::Conv2d => {},
-    LayerType::BatchNorm1d => {},
-    LayerType::Linear => {},
-    LayerType::GRU => {},
-    LayerType::Stretch2d => {},
-  }
-
-  Ok(())
+  Ok(Model {
+    header,
+    upsample,
+    resnet,
+    i,
+    rnn1,
+    fc1,
+    fc2,
+  })
 }
 
 pub trait ParseStruct<T> {
@@ -91,6 +62,7 @@ pub trait ParseStruct<T> {
 
 impl ParseStruct<ModelHeader> for ModelHeader {
   fn parse(file: &mut File) -> io::Result<ModelHeader> {
+    println!("ModelHeader.parse()");
     Ok( ModelHeader {
       num_res_blocks: file.read_i32::<LittleEndian>()?,
       num_upsample: file.read_i32::<LittleEndian>()?,
@@ -102,6 +74,7 @@ impl ParseStruct<ModelHeader> for ModelHeader {
 
 impl ParseStruct<Resnet> for Resnet {
   fn parse(file: &mut File) -> io::Result<Resnet> {
+    println!("Resnet.parse()");
     Ok( Resnet {
       conv_in: TorchLayer::parse(file)?,
       batch_norm: TorchLayer::parse(file)?,
@@ -112,8 +85,28 @@ impl ParseStruct<Resnet> for Resnet {
   }
 }
 
+impl ParseStruct<UpsampleNetwork> for UpsampleNetwork {
+  fn parse(file: &mut File) -> io::Result<UpsampleNetwork> {
+    println!("UpsampleNetwork.parse()");
+
+    // const int UPSAMPLE_LAYERS = 3;
+    let mut up_layers = Vec::with_capacity(3 * 2);
+
+    for _i in 0 .. 6 {
+      let layer = TorchLayer::parse(file)?;
+      up_layers.push(layer);
+    }
+
+    Ok(UpsampleNetwork {
+      up_layers,
+    })
+  }
+}
+
+
 impl ParseStruct<TorchLayer> for TorchLayer {
   fn parse(file: &mut File) -> io::Result<TorchLayer> {
+    println!("TorchLayer.parse()");
     let header = TorchLayerHeader::parse(file)?;
     println!("TorchLayerHeader: {:?}", header);
 
@@ -132,6 +125,7 @@ impl ParseStruct<TorchLayer> for TorchLayer {
 
 impl ParseStruct<TorchLayerHeader> for TorchLayerHeader {
   fn parse(file: &mut File) -> io::Result<TorchLayerHeader> {
+    println!("TorchLayerHeader.parse()");
     let layer_type = file.read_i32::<LittleEndian>()?;
 
     let layer_type = match layer_type {
@@ -260,6 +254,7 @@ impl ParseStruct<Conv2dLayer> for Conv2dLayer {
 
 impl ParseStruct<BatchNorm1dLayer> for BatchNorm1dLayer {
   fn parse(file: &mut File) -> io::Result<BatchNorm1dLayer> {
+    println!("BatchNorm1dLayer.parse()");
     let el_size = file.read_i32::<LittleEndian>()?;
     let in_channels= file.read_i32::<LittleEndian>()?;
     let eps = file.read_f32::<LittleEndian>()?;
@@ -291,6 +286,7 @@ impl ParseStruct<BatchNorm1dLayer> for BatchNorm1dLayer {
 
 impl ParseStruct<LinearLayer> for LinearLayer {
   fn parse(file: &mut File) -> io::Result<LinearLayer> {
+    println!("LinearLayer.parse()");
     // Read header
     let el_size = file.read_i32::<LittleEndian>()?;
     let n_rows = file.read_i32::<LittleEndian>()?;
@@ -316,6 +312,7 @@ impl ParseStruct<LinearLayer> for LinearLayer {
 
 impl ParseStruct<GruLayer> for GruLayer {
   fn parse(file: &mut File) -> io::Result<GruLayer> {
+    println!("GruLayer.parse()");
     // Read header
     let el_size = file.read_i32::<LittleEndian>()?;
     let n_hidden = file.read_i32::<LittleEndian>()?;
@@ -362,6 +359,7 @@ impl ParseStruct<GruLayer> for GruLayer {
 
 impl ParseStruct<Stretch2dLayer> for Stretch2dLayer {
   fn parse(file: &mut File) -> io::Result<Stretch2dLayer> {
+    println!("Stretch2dLayer.parse()");
     Ok(Stretch2dLayer {
       x_scale: file.read_i32::<LittleEndian>()?,
       y_scale: file.read_i32::<LittleEndian>()?,

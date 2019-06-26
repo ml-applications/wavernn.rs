@@ -155,7 +155,17 @@ impl ParseStruct<TorchLayerHeader> for TorchLayerHeader {
 impl ParseStruct<ResBlock> for ResBlock {
   fn parse(file: &mut File) -> io::Result<ResBlock> {
     println!("ResBlock.parse()");
-    unimplemented!()
+    // const int RES_BLOCKS = 3;
+    let mut resblock = Vec::with_capacity(3 * 4);
+
+    for _i in 0 .. 12 {
+      let layer = TorchLayer::parse(file)?;
+      resblock.push(layer);
+    }
+
+    Ok(ResBlock {
+      resblock,
+    })
   }
 }
 

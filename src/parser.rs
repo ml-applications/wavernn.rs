@@ -85,6 +85,21 @@ impl ParseStruct<Resnet> for Resnet {
   }
 }
 
+impl CompMatrix {
+  fn parse_matrix(file: &mut File, el_size: i32, n_rows: i32, n_cols: i32) -> io::Result<CompMatrix> {
+    panic!("TODO: THIS IS WHERE I LEFT OFF. COMPMATRIX");
+    println!("CompMatrix.parse_matrix()");
+    Ok( CompMatrix {
+      weight: Vec::new(), // TODO
+      row_idx: Vec::new(), // TODO
+      col_idx: Vec::new(), // TODO
+      n_groups: 1234, // TODO
+      n_rows,
+      n_cols,
+    })
+  }
+}
+
 impl ParseStruct<UpsampleNetwork> for UpsampleNetwork {
   fn parse(file: &mut File) -> io::Result<UpsampleNetwork> {
     println!("UpsampleNetwork.parse()");
@@ -305,13 +320,13 @@ impl ParseStruct<LinearLayer> for LinearLayer {
       return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
     }
 
-    // TODO: CompMatrix mat;
-    // mat.read(fd, header.elSize, header.nRows, header.nCols); //read compressed array
-    panic!("CANNOT READ LINEAR LAYER YET");
+    // read compressed array
+    let mat = CompMatrix::parse_matrix(file, el_size, n_cols, n_cols)?;
 
     let bias = read_vec_f32(file, n_rows as usize)?;
 
     Ok(Self {
+      mat,
       bias,
       n_rows,
       n_cols,
@@ -334,26 +349,31 @@ impl ParseStruct<GruLayer> for GruLayer {
     let n_rows = n_hidden;
     let n_cols = n_input;
 
-    // TODO: CompMatrix W_ir,W_iz,W_in;
-    // TODO: CompMatrix W_hr,W_hz,W_hn;
+    let w_ir = CompMatrix::parse_matrix(file, el_size, n_hidden, n_input)?;
+    let w_iz = CompMatrix::parse_matrix(file, el_size, n_hidden, n_input)?;
+    let w_in = CompMatrix::parse_matrix(file, el_size, n_hidden, n_input)?;
 
-    let mut b_ir = Vec::with_capacity(n_hidden as usize);
-    let mut b_iz = Vec::with_capacity(n_hidden as usize);
-    let mut b_in = Vec::with_capacity(n_hidden as usize);
+    let w_hr = CompMatrix::parse_matrix(file, el_size, n_hidden, n_hidden)?;
+    let w_hz = CompMatrix::parse_matrix(file, el_size, n_hidden, n_hidden)?;
+    let w_hn = CompMatrix::parse_matrix(file, el_size, n_hidden, n_hidden)?;
 
-    read_into_matrix(file, &mut b_ir);
-    read_into_matrix(file, &mut b_iz);
-    read_into_matrix(file, &mut b_in);
+    let hidden = n_hidden as usize;
 
-    let mut b_hr = Vec::with_capacity(n_hidden as usize);
-    let mut b_hz = Vec::with_capacity(n_hidden as usize);
-    let mut b_hn = Vec::with_capacity(n_hidden as usize);
+    let mut b_ir = read_vec_f32(file, hidden)?;
+    let mut b_iz = read_vec_f32(file, hidden)?;
+    let mut b_in = read_vec_f32(file, hidden)?;
 
-    read_into_matrix(file, &mut b_hr);
-    read_into_matrix(file, &mut b_hz);
-    read_into_matrix(file, &mut b_hn);
+    let mut b_hr = read_vec_f32(file, hidden)?;
+    let mut b_hz = read_vec_f32(file, hidden)?;
+    let mut b_hn = read_vec_f32(file, hidden)?;
 
     Ok(GruLayer {
+      w_ir,
+      w_iz,
+      w_in,
+      w_hr,
+      w_hz,
+      w_hn,
       b_ir,
       b_iz,
       b_in,
@@ -374,15 +394,6 @@ impl ParseStruct<Stretch2dLayer> for Stretch2dLayer {
       y_scale: file.read_i32::<LittleEndian>()?,
     })
   }
-}
-
-fn read_into_matrix(file: &mut File, mat: &mut Vec<f32>) -> io::Result<()> {
-  println!("-> read_into_matrix()");
-  panic!("DO NOT CALL READ_INTO_MATRIX()!");
-  for (j, element) in enumerate(mat) {
-    *element = file.read_f32::<LittleEndian>().expect("This should work");
-  }
-  Ok(())
 }
 
 fn read_vec_f32(file: &mut File, size: usize) -> io::Result<Vec<f32>> {

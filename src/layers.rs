@@ -107,6 +107,14 @@ pub struct Model {
 // wavernn.h
 #[derive(Clone,Debug)]
 pub struct CompMatrix {
+  /*class CompMatrix{
+    float __attribute__((aligned (32))) *weight;
+    int __attribute__((aligned (32))) *rowIdx;
+    int8_t __attribute__((aligned (32))) *colIdx;
+    int nGroups;
+    int nRows;
+    int nCols;
+  */
   pub weight: Vec<f32>, // TODO: Is this right? Jeez, C++
   pub row_idx: Vec<i32>, // TODO: Is this right? Jeez, C++
   pub col_idx: Vec<i8>, // TODO: Is this right? Jeez, C++
@@ -227,8 +235,7 @@ pub struct LinearLayer {
     int nCols;
   */
 
-  // TODO: CompMatrix mat;
-
+  pub mat: CompMatrix,
   pub bias: Vec<f32>,
   pub n_rows: i32,
   pub n_cols: i32,
@@ -250,8 +257,12 @@ pub struct GruLayer {
     int nCols;
   */
 
-  // TODO: CompMatrix W_ir,W_iz,W_in;
-  // TODO: CompMatrix W_hr,W_hz,W_hn;
+  pub w_ir: CompMatrix,
+  pub w_iz: CompMatrix,
+  pub w_in: CompMatrix,
+  pub w_hr: CompMatrix,
+  pub w_hz: CompMatrix,
+  pub w_hn: CompMatrix,
 
   pub b_ir: Vec<f32>,
   pub b_iz: Vec<f32>,

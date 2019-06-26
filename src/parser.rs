@@ -128,6 +128,8 @@ impl ParseStruct<TorchLayerHeader> for TorchLayerHeader {
     println!("TorchLayerHeader.parse()");
     let layer_type = file.read_i32::<LittleEndian>()?;
 
+    println!(" -> layer_type = {}", layer_type);
+
     let layer_type = match layer_type {
       1 => LayerType::Conv1d,
       2 => LayerType::Conv2d,
@@ -152,7 +154,8 @@ impl ParseStruct<ResBlock> for ResBlock {
     // const int RES_BLOCKS = 3;
     let mut resblock = Vec::with_capacity(3 * 4);
 
-    for _i in 0 .. 12 {
+    for i in 0 .. 12 {
+      println!(" - ResBlock.parse #{}", i);
       let layer = TorchLayer::parse(file)?;
       resblock.push(layer);
     }
@@ -212,12 +215,11 @@ impl ParseStruct<Conv1dLayer> for Conv1dLayer {
       }
     }
 
-    let mut bias= Vec::new();
-
-    if has_bias {
-      bias.reserve(kernel_size as usize);
-      read_into_matrix(file, &mut bias);
-    }
+    let bias = if has_bias {
+      read_vec_f32(file, kernel_size as usize)?
+    } else {
+      Vec::new()
+    };
 
     Ok(Conv1dLayer {
       weight,
@@ -241,9 +243,7 @@ impl ParseStruct<Conv2dLayer> for Conv2dLayer {
       return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
     }
 
-    let mut weight= Vec::with_capacity(n_kernel as usize);
-
-    read_into_matrix(file, &mut weight);
+    let weight = read_vec_f32(file, n_kernel as usize)?;
 
     Ok(Conv2dLayer {
       weight,
@@ -255,23 +255,24 @@ impl ParseStruct<Conv2dLayer> for Conv2dLayer {
 impl ParseStruct<BatchNorm1dLayer> for BatchNorm1dLayer {
   fn parse(file: &mut File) -> io::Result<BatchNorm1dLayer> {
     println!("BatchNorm1dLayer.parse()");
+
     let el_size = file.read_i32::<LittleEndian>()?;
     let in_channels= file.read_i32::<LittleEndian>()?;
     let eps = file.read_f32::<LittleEndian>()?;
+
+    println!("> el_size = {}", el_size);
+    println!("> in_channels = {}", in_channels);
+    println!("> eps = {}", eps);
 
     if el_size != 2 && el_size != 4 {
       return Err(IoError::from_raw_os_error(0)); // TODO: Actual error
     }
 
-    let mut weight= Vec::with_capacity(in_channels as usize);
-    let mut bias= Vec::with_capacity(in_channels as usize);
-    let mut running_mean= Vec::with_capacity(in_channels as usize);
-    let mut running_var= Vec::with_capacity(in_channels as usize);
-
-    read_into_matrix(file, &mut weight);
-    read_into_matrix(file, &mut bias);
-    read_into_matrix(file, &mut running_mean);
-    read_into_matrix(file, &mut running_var);
+    let channels = in_channels as usize;
+    let weight = read_vec_f32(file, channels)?;
+    let bias = read_vec_f32(file, channels)?;
+    let running_mean = read_vec_f32(file, channels)?;
+    let running_var = read_vec_f32(file, channels)?;
 
     Ok(BatchNorm1dLayer {
       weight,
@@ -297,10 +298,10 @@ impl ParseStruct<LinearLayer> for LinearLayer {
     }
 
     // TODO: CompMatrix mat;
+    // mat.read(fd, header.elSize, header.nRows, header.nCols); //read compressed array
+    panic!("CANNOT READ LINEAR LAYER YET");
 
-    let mut bias = Vec::with_capacity(n_rows as usize);
-
-    read_into_matrix(file, &mut bias);
+    let bias = read_vec_f32(file, n_rows as usize)?;
 
     Ok(Self {
       bias,
@@ -368,10 +369,20 @@ impl ParseStruct<Stretch2dLayer> for Stretch2dLayer {
 }
 
 fn read_into_matrix(file: &mut File, mat: &mut Vec<f32>) -> io::Result<()> {
+  println!("-> read_into_matrix()");
+  panic!("DO NOT CALL READ_INTO_MATRIX()!");
   for (j, element) in enumerate(mat) {
     *element = file.read_f32::<LittleEndian>().expect("This should work");
   }
   Ok(())
+}
+
+fn read_vec_f32(file: &mut File, size: usize) -> io::Result<Vec<f32>> {
+  let mut vec = Vec::with_capacity(size);
+  for _i in 0 .. size {
+    vec.push(file.read_f32::<LittleEndian>()?);
+  }
+  Ok(vec)
 }
 
 fn read_name(file: &mut File) -> io::Result<String> {

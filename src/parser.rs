@@ -86,14 +86,29 @@ impl ParseStruct<Resnet> for Resnet {
 }
 
 impl CompMatrix {
+  // See wavernn.h: CompMatrix::read()
   fn parse_matrix(file: &mut File, el_size: i32, n_rows: i32, n_cols: i32) -> io::Result<CompMatrix> {
-    panic!("TODO: THIS IS WHERE I LEFT OFF. COMPMATRIX");
     println!("CompMatrix.parse_matrix()");
+
+    let n_weights = file.read_i32::<LittleEndian>()?;
+
+    let mut weights = read_vec_f32(file, n_weights as usize)?;
+
+    let n_index = file.read_i32::<LittleEndian>()?;
+
+    let indexes = read_vec_u8(file, n_index as usize)?;
+
+    // see CompMatrix::prepData(weight,index)
+    // TODO: some memory alignments
+
+    let n_groups = weights.len() as i32 / 4; // SPARSE_GROUP_SIZE = 4
+
+    //panic!("TODO: THIS IS WHERE I LEFT OFF. COMPMATRIX");
     Ok( CompMatrix {
-      weight: Vec::new(), // TODO
+      weight: weights,
       row_idx: Vec::new(), // TODO
       col_idx: Vec::new(), // TODO
-      n_groups: 1234, // TODO
+      n_groups,
       n_rows,
       n_cols,
     })
@@ -400,6 +415,14 @@ fn read_vec_f32(file: &mut File, size: usize) -> io::Result<Vec<f32>> {
   let mut vec = Vec::with_capacity(size);
   for _i in 0 .. size {
     vec.push(file.read_f32::<LittleEndian>()?);
+  }
+  Ok(vec)
+}
+
+fn read_vec_u8(file: &mut File, size: usize) -> io::Result<Vec<u8>> {
+  let mut vec = Vec::with_capacity(size);
+  for _i in 0 .. size {
+    vec.push(file.read_u8()?);
   }
   Ok(vec)
 }
